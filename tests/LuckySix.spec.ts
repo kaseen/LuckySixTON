@@ -34,19 +34,32 @@ describe('LuckySix', () => {
         });
     });
 
-    it('should work', async () => {
-        const before = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        console.log(before);
+    it('Test PlayTicket function', async () => {
+        const beforePlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+        expect(beforePlayingTicket?.lastCombinationPlayed).toEqual(0n);
 
-        const packedCombination = 69n;
+        const packedCombination = 123n;
 
-        await luckySix.send(
+        const firstTx = await luckySix.send(
             deployer.getSender(),
             { value: toNano('0.03') },
             { $$type: 'PlayTicket', packedCombination }
         );
 
-        const after = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        console.log(after);
+        const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+        expect(afterPlayingTicket?.lastCombinationPlayed).toEqual(123n);
+
+        const secondTx = await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            { $$type: 'PlayTicket', packedCombination }
+        );
+
+        /*
+        TODO
+        expect(secondTx.transactions).toHaveTransaction({
+            exitCode: 1234444
+        })*/
+
     });
 });

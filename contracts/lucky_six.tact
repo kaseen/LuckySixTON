@@ -30,12 +30,10 @@ contract LuckySix with Deployable {
          * @dev: A user cannot play a ticket if the status of the last ticket is unresolved, regardless of
          * whether the ticket is winning or losing. The map for sender address needs to be empty before
          * playing the next ticket.
-         * @dev: It's more cost-effective to revert with an integer since storing a revert string on-chain
-         * incurs higher gas costs. Therefore, the following throw is equivalent:
-         *     expect(previousTicket == null, "The last ticket's status is unresolved.");
          */
         if(previousTicket != null){
-            throw(100);
+            // TODO: Test throw
+            nativeThrow(123444);
         }
 
         // TODO: Check if numbers are valid
