@@ -1,5 +1,34 @@
 import "@stdlib/deploy";
 
+// ------------------------------------------------------------------------------------------------------
+// --------------------------------------- TICKET ARRAY STRUCTURE ---------------------------------------
+// ------------------------------------------------------------------------------------------------------
+const _MAX_ARRAY_SIZE: Int = 6;
+
+struct UnpackedTicketCombinationArray {
+    array: map<Int as uint8, Int as uint8>;
+    length: Int = 0;
+}
+
+extends mutates fun append(self: UnpackedTicketCombinationArray, item: Int) {
+    require(self.length + 1 <= _MAX_ARRAY_SIZE, "");
+    self.array.set(self.length, item);
+    self.length += 1;
+}
+
+extends fun getIndex(self: UnpackedTicketCombinationArray, index: Int): Int {
+    require(self.length > 0, "");
+    require(index >= 0, "");
+    require(index < self.length, "");
+
+    return self.array.get(index)!!;
+}
+
+fun emptyArray(): UnpackedTicketCombinationArray {
+    return UnpackedTicketCombinationArray{ array: emptyMap(), length: 0 };
+}
+
+
 message PlayTicket {
     packedCombination: Int as uint64;
 }
@@ -8,15 +37,6 @@ struct Ticket {
     roundTickedPlayed: Int as uint64;
     packedTicketCombination: Int as uint64;
     redeemed: Bool;
-}
-
-struct UnpackedTicketCombination {
-    num1: Int as uint8;
-    num2: Int as uint8;
-    num3: Int as uint8;
-    num4: Int as uint8;
-    num5: Int as uint8;
-    num6: Int as uint8;
 }
 
 contract LuckySix with Deployable {
@@ -72,29 +92,18 @@ contract LuckySix with Deployable {
         }
     }
 
-    get fun bla(packedNumber: Int): UnpackedTicketCombination {
+    get fun bla(packedNumber: Int): UnpackedTicketCombinationArray {
         return self.unpackTicketNumbers(packedNumber);
     }
 
-    fun unpackTicketNumbers(packedNumbers: Int): UnpackedTicketCombination {
-        let num1: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
+    fun unpackTicketNumbers(packedNumbers: Int): UnpackedTicketCombinationArray {
+        let result: UnpackedTicketCombinationArray = emptyArray();
 
-        let num2: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
+        repeat(6) {
+            result.append(packedNumbers & self._BITMASK_0b111111);
+            packedNumbers = packedNumbers >> 6;
+        }
 
-        let num3: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
-
-        let num4: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
-
-        let num5: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
-
-        let num6: Int = packedNumbers & self._BITMASK_0b111111;
-        packedNumbers = packedNumbers >> 6;
-
-        return UnpackedTicketCombination { num1, num2, num3, num4, num5, num6 };
+        return result;
     }
 }
