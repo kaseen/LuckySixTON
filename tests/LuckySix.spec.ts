@@ -34,19 +34,19 @@ describe('LuckySix', () => {
         });
     });
 
-    it('should deploy', async () => {
-        const before = await luckySix.getTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+    it('should work', async () => {
+        const before = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
         console.log(before);
 
-        const num1 = 6n; 
+        const packedCombination = 69n;
 
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('0.03') },
-            { $$type: 'PlayTicket', num1 }
+            { $$type: 'PlayTicket', packedCombination }
         );
 
-        const after = await luckySix.getTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+        const after = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
         console.log(after);
     });
 });
