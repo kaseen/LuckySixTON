@@ -36,7 +36,7 @@ describe('LuckySix', () => {
 
     it('Test PlayTicket function', async () => {
         const beforePlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(beforePlayingTicket?.lastCombinationPlayed).toEqual(0n);
+        expect(beforePlayingTicket?.packedTicketCombination).toEqual(0n);
 
         const packedCombination = 123n;
 
@@ -47,7 +47,7 @@ describe('LuckySix', () => {
         );
 
         const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(afterPlayingTicket?.lastCombinationPlayed).toEqual(123n);
+        expect(afterPlayingTicket?.packedTicketCombination).toEqual(123n);
 
         const secondTx = await luckySix.send(
             deployer.getSender(),
@@ -61,5 +61,12 @@ describe('LuckySix', () => {
             exitCode: 1234444
         })*/
 
+    });
+
+    it('Sould unpack', async () => {
+        // 000110 000101 000100 000011 000010 000001 = 6527398017n
+        const bla = await luckySix.getBla(6527398017n);
+        
+        console.log(bla);
     });
 });

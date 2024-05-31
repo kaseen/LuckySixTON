@@ -6,11 +6,22 @@ message PlayTicket {
  
 struct Ticket {
     roundTickedPlayed: Int as uint64;
-    lastCombinationPlayed: Int as uint64;
+    packedTicketCombination: Int as uint64;
     redeemed: Bool;
 }
 
+struct UnpackedTicketCombination {
+    num1: Int as uint8;
+    num2: Int as uint8;
+    num3: Int as uint8;
+    num4: Int as uint8;
+    num5: Int as uint8;
+    num6: Int as uint8;
+}
+
 contract LuckySix with Deployable {
+
+    const _BITMASK_0b111111: Int = pow(2, 6) - 1;
 
     owner: Address;
     playerTicket: map<Address, Ticket>;
@@ -31,7 +42,7 @@ contract LuckySix with Deployable {
          * whether the ticket is winning or losing. The map for sender address needs to be empty before
          * playing the next ticket.
          */
-        if(previousTicket != null){
+        if(previousTicket != null) {
             // TODO: Test throw
             nativeThrow(123444);
         }
@@ -40,9 +51,9 @@ contract LuckySix with Deployable {
 
         // TODO: Pay for storage
 
-        self.playerTicket.set(sender(), Ticket{ 
+        self.playerTicket.set(sender(), Ticket { 
             roundTickedPlayed: self.currentRound,
-            lastCombinationPlayed: msg.packedCombination,
+            packedTicketCombination: msg.packedCombination,
             redeemed: false
         });
     }
@@ -53,11 +64,37 @@ contract LuckySix with Deployable {
         if(previousTicket != null){
             return previousTicket;
         } else {
-            return Ticket{ 
+            return Ticket { 
                 roundTickedPlayed: 0, 
-                lastCombinationPlayed: 0,
+                packedTicketCombination: 0,
                 redeemed: false
             };
         }
+    }
+
+    get fun bla(packedNumber: Int): UnpackedTicketCombination {
+        return self.unpackTicketNumbers(packedNumber);
+    }
+
+    fun unpackTicketNumbers(packedNumbers: Int): UnpackedTicketCombination {
+        let num1: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        let num2: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        let num3: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        let num4: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        let num5: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        let num6: Int = packedNumbers & self._BITMASK_0b111111;
+        packedNumbers = packedNumbers >> 6;
+
+        return UnpackedTicketCombination { num1, num2, num3, num4, num5, num6 };
     }
 }
