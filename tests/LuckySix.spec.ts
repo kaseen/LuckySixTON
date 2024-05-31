@@ -47,9 +47,9 @@ describe('LuckySix', () => {
 
     it('Test PlayTicket function', async () => {
         const beforePlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(beforePlayingTicket?.packedTicketCombination).toEqual(0n);
+        expect(beforePlayingTicket?.packedCombination).toEqual(0n);
 
-        const packedCombination = 123n;
+        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
 
         const firstTx = await luckySix.send(
             deployer.getSender(),
@@ -58,13 +58,13 @@ describe('LuckySix', () => {
         );
 
         const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(afterPlayingTicket?.packedTicketCombination).toEqual(123n);
+        expect(afterPlayingTicket?.packedCombination).toEqual(packedCombination);
 
-        const secondTx = await luckySix.send(
+        /*const secondTx = await luckySix.send(
             deployer.getSender(),
             { value: toNano('0.03') },
             { $$type: 'PlayTicket', packedCombination }
-        );
+        );*/
 
         /*
         TODO
@@ -83,4 +83,13 @@ describe('LuckySix', () => {
         expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationNotUnique))).toEqual(false);
         expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
     });
+
+    it('Should print', async () => {
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            'generateRandom48Numbers'
+        );
+        console.log(await luckySix.getTest());
+    })
 });
