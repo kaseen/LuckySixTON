@@ -1,0 +1,8 @@
+node_modules/
+build/
+temp
+dist
+package-lock.json
+.DS_Store
+.prettierignore
+.prettierrc
