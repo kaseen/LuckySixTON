@@ -42,6 +42,7 @@ struct Ticket {
 contract LuckySix with Deployable {
 
     const _BITMASK_0b111111: Int = pow(2, 6) - 1;
+    const _MAXIMUM_NUMBER_DRAWN: Int = 48;
 
     owner: Address;
     playerTicket: map<Address, Ticket>;
@@ -92,8 +93,42 @@ contract LuckySix with Deployable {
         }
     }
 
-    get fun bla(packedNumber: Int): UnpackedTicketCombinationArray {
-        return self.unpackTicketNumbers(packedNumber);
+    get fun bla(packedNumbers: Int): UnpackedTicketCombinationArray {
+        return self.unpackTicketNumbers(packedNumbers);
+    }
+
+    get fun ifValid(packedNumbers: Int): Bool {
+        return self.checkIfPlayedNumbersAreValid(packedNumbers);
+    }
+
+    // TODO: Can it be private?
+    fun checkIfPlayedNumbersAreValid(packedNumbers: Int): Bool {
+
+        let combinationLength: Int = 6;
+        let i: Int = 0;
+        let j: Int = 0;
+
+        let combination: UnpackedTicketCombinationArray = self.unpackTicketNumbers(packedNumbers);
+        
+        while(i < combinationLength) {
+            // Check if number is between 1 and `_MAXIMUM_NUMBER_DRAWN`
+            if(combination.getIndex(i) < 1 || combination.getIndex(i) > self._MAXIMUM_NUMBER_DRAWN) {
+                return false;
+            }
+
+            // Check if number is unique
+            j = i + 1;
+            while(j < combinationLength) {
+                if(combination.getIndex(i) == combination.getIndex(j)) {
+                    return false;
+                }
+
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+
+        return true;
     }
 
     fun unpackTicketNumbers(packedNumbers: Int): UnpackedTicketCombinationArray {

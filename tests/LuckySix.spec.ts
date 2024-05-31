@@ -3,6 +3,17 @@ import { Address, toNano } from '@ton/core';
 import { LuckySix } from '../wrappers/LuckySix';
 import '@ton/test-utils';
 
+const packCombinationToBePlayed = (arr: Array<bigint>) => {
+    let result = 0n;
+    for(let i = 0; i < 6; i++){
+        result = result | arr[i];
+        result <<= 6n;
+    }
+    result >>= 6n;
+
+    return result;
+}
+
 describe('LuckySix', () => {
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
@@ -63,10 +74,13 @@ describe('LuckySix', () => {
 
     });
 
-    it('Sould unpack', async () => {
-        // 000110 000101 000100 000011 000010 000001 = 6527398017n
-        const bla = await luckySix.getBla(6527398017n);
-        
-        console.log(bla);
+    it('Should check which combinations are valid', async () => {
+        const validCombination = [1n, 2n, 3n, 4n, 5n, 6n];
+        const invalidCombinationNotUnique = [1n, 2n, 3n, 4n, 5n, 3n];
+        const invalidCombinationOverflow = [1n, 2n, 3n, 4n, 49n, 6n];
+
+        expect(await luckySix.getIfValid(packCombinationToBePlayed(validCombination))).toEqual(true);
+        expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationNotUnique))).toEqual(false);
+        expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
     });
 });
