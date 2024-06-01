@@ -1,8 +1,8 @@
 import "@stdlib/deploy";
 
-// ------------------------------------------------------------------------------------------------------
-// --------------------------------------- TICKET ARRAY STRUCTURE ---------------------------------------
-// ------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
+// ------------------------------- TICKET ARRAY STRUCTURE -------------------------------
+// --------------------------------------------------------------------------------------
 const _MAX_ARRAY_SIZE: Int = 48;
 
 struct UnpackedTicketCombinationArray {
@@ -55,9 +55,9 @@ fun allocateArray(n: Int): UnpackedTicketCombinationArray {
     return UnpackedTicketCombinationArray { array: emptyMap(), length: n }; 
 }
 
-// ------------------------------------------------------------------------------------------------------
-// ---------------------------------------------- MESSAGES ----------------------------------------------
-// ------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
+// --------------------------------------- OTHER ----------------------------------------
+// --------------------------------------------------------------------------------------
 message PlayTicket {
     packedCombination:  Int as uint64;
 }
@@ -88,6 +88,7 @@ struct Round {
  *       TicketDoesNotExists:       7
  *       InvalidRoundNumber:        8
  *       TicketNotWinning:          9
+ *       NotEnoughFunds:            10
  */
 contract LuckySix with Deployable {
 
@@ -172,9 +173,13 @@ contract LuckySix with Deployable {
      *       whether the ticket is winning or losing. The map for sender address needs to be empty before
      *       playing the next ticket.
      */
+    // TODO: Half a msg.value is played and minimum value that is sent is 1 TON
     receive(msg: PlayTicket) {
         // LotteryNotOpen
         if(self.lotteryState != self.LOTTERY_READY && self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(3); }
+
+        // NotEnoughFunds
+        if(context().value < ton("1")) { nativeThrow(10); }
 
         let previousTicket: Ticket? = self.playerTicket.get(context().sender);
         
@@ -194,11 +199,10 @@ contract LuckySix with Deployable {
         }
 
         // TODO: Pay for storage
-
         self.playerTicket.set(context().sender, Ticket{ 
             roundTickedPlayed: self.roundInfo.roundNumber,
             packedCombination: msg.packedCombination,
-            ticketBet: context().value,
+            ticketBet: context().value / 2,
             redeemed: false
         });
     }    

@@ -26,6 +26,10 @@ const unpackToCombination = (packedResult: bigint) => {
     return result;
 }
 
+const LOTTERY_READY = 0n;
+const LOTTERY_STARTED = 1n;
+const LOTTERY_CLOSED = 2n;
+
 describe('LuckySix', () => {
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
@@ -61,6 +65,8 @@ describe('LuckySix', () => {
             { value: toNano('0.03') },
             'openRound'
         );
+
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_READY);
     });
 
     it('Should test if the order logic of lottery states is correct', async () => {
@@ -68,33 +74,38 @@ describe('LuckySix', () => {
 
         await luckySix.send(
             deployer.getSender(),
-            { value: toNano('0.03') },
+            { value: toNano('1') },
             { $$type: 'PlayTicket', packedCombination }
         );
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_STARTED);
 
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('100') },
             'drawNumbers'
         );
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_CLOSED);
 
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('100') },
             'openRound'
         );
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_READY);
 
         await luckySix.send(
             deployer.getSender(),
-            { value: toNano('0.03') },
+            { value: toNano('1') },
             { $$type: 'PlayTicket', packedCombination }
         );
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_STARTED);
 
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('100') },
             'drawNumbers'
         );
+        expect(await luckySix.getLotteryState()).toEqual(LOTTERY_CLOSED);
 
         console.log(await luckySix.getUnpackedDrawnNumbersForRound(0n));
         console.log(await luckySix.getUnpackedDrawnNumbersForRound(1n));
@@ -106,27 +117,21 @@ describe('LuckySix', () => {
 
         const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
 
-        const firstTx = await luckySix.send(
+        await luckySix.send(
             deployer.getSender(),
-            { value: toNano('0.03') },
+            { value: toNano('1') },
             { $$type: 'PlayTicket', packedCombination }
         );
 
         const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
         expect(afterPlayingTicket?.packedCombination).toEqual(packedCombination);
 
-        console.log('==================TODO')
-        const secondTx = await luckySix.send(
+        await luckySix.send(
             deployer.getSender(),
-            { value: toNano('0.03') },
-            { $$type: 'PlayTicket', packedCombination }
+            { value: toNano('100') },
+            'drawNumbers'
         );
 
-        /*
-        TODO
-        expect(secondTx.transactions).toHaveTransaction({
-            exitCode: 1234444
-        })*/
-
+        console.log(await luckySix.getUnpackedDrawnNumbersForRound(0n));
     });
 });
