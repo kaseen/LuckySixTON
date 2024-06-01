@@ -90,8 +90,8 @@ contract LuckySix with Deployable {
         // TODO: self.lotteryState = self.LOTTERY_CLOSED;
         self.lotteryState = self.LOTTERY_READY;
 
+        self.packedResult = 0;          // TODO: remove
         self.testArray = emptyArray(); // TODO: Remove
-        //self.testArray.append(51);
     }
 
     receive("openRound") {
@@ -109,9 +109,10 @@ contract LuckySix with Deployable {
 
     // TODO REMOVE
     testArray: UnpackedTicketCombinationArray;
+    packedResult: Int;
 
-    get fun test(): UnpackedTicketCombinationArray {
-        return self.testArray;
+    get fun test(): Int {
+        return self.packedResult;
     }
 
     // TODO REMOVE
@@ -125,6 +126,8 @@ contract LuckySix with Deployable {
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
         let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
 
+        let packedResult: Int = 0;
+
         let j: Int = numbers1to48.getLength() - 1;
         let i: Int = 0;
         while(i < self.NUMBER_OF_DRAWS){
@@ -132,9 +135,15 @@ contract LuckySix with Deployable {
 
             numbers1to48.swapIndexes(j, indexOfChosenNumber);
 
+            packedResult = packedResult | numbers1to48.getIndex(j);
+            packedResult = packedResult << 6;
+
             i = i + 1;
             j = j - 1;
         }
+
+        packedResult = packedResult >> 6;
+        self.packedResult = packedResult;
 
         self.testArray = numbers1to48;
 

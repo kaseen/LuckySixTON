@@ -14,6 +14,18 @@ const packCombinationToBePlayed = (arr: Array<bigint>) => {
     return result;
 }
 
+const unpackToCombination = (packedResult: bigint) => {
+    const NUMBER_OF_DRAWS = 35;
+    const BITMASK_0b111111 = 63n;
+    let tmp = NUMBER_OF_DRAWS - 1;
+    let result: Array<bigint> = [];
+    for(let i = 0; i < NUMBER_OF_DRAWS; i++){
+        result[tmp - i] = (packedResult >> (BigInt(i) * BigInt(6))) & BITMASK_0b111111;
+    }
+
+    return result;
+}
+
 describe('LuckySix', () => {
     let blockchain: Blockchain;
     let deployer: SandboxContract<TreasuryContract>;
@@ -85,12 +97,16 @@ describe('LuckySix', () => {
         expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
     });
 
-    it('Should print', async () => {
+    xit('Should print', async () => {
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('100') },
             'drawNumbers'
         );
         console.log(await luckySix.getTest());
+    })
+
+    it('Asgsg', () => {
+        console.log(unpackToCombination(1009575958687090839950251312265224398477446973448828118316714820n));
     })
 });
