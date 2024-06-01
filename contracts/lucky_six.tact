@@ -73,8 +73,7 @@ contract LuckySix with Deployable {
 
     const LOTTERY_READY:        Int = 0;
     const LOTTERY_STARTED:      Int = 1;
-    const LOTTERY_DRAWING:      Int = 2;
-    const LOTTERY_CLOSED:       Int = 3;
+    const LOTTERY_CLOSED:       Int = 2;
 
     lotteryState: Int as uint8; 
     roundInfo: Round;
@@ -92,10 +91,7 @@ contract LuckySix with Deployable {
             isStarted: false
         };
         // TODO: self.lotteryState = self.LOTTERY_CLOSED;
-        self.lotteryState = self.LOTTERY_READY;
-
-        self.packedResult = 0;          // TODO: remove
-        self.testArray = emptyArray(); // TODO: Remove
+        self.lotteryState = self.LOTTERY_READY;     // TODO: remove
     }
 
     receive("openRound") {
@@ -111,21 +107,14 @@ contract LuckySix with Deployable {
         self.roundInfo.isStarted = false;
     }
 
-    // TODO REMOVE
-    testArray: UnpackedTicketCombinationArray;
-    packedResult: Int;
-
-    get fun test(): Int {
-        return self.packedResult;
-    }
-
-    // TODO REMOVE
     // TODO: Check how much this costs
     receive("drawNumbers") {
         if(sender() != self.owner) {
             // TODO: UnauthorizedAccess
             nativeThrow(1251251251);
         }
+
+        // TODO: Check timestamp
 
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
         let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
@@ -147,12 +136,10 @@ contract LuckySix with Deployable {
         }
 
         packedResult = packedResult >> 6;
-        self.packedResult = packedResult;
 
         self.drawnNumbersPerRound.set(self.roundInfo.roundNumber, packedResult);
         self.roundInfo.roundNumber = self.roundInfo.roundNumber + 1;
-
-        // TODO: self.lotteryState = self.LOTTERY_CLOSED;
+        self.lotteryState = self.LOTTERY_CLOSED;
     }
 
     /**
@@ -169,17 +156,25 @@ contract LuckySix with Deployable {
         let previousTicket: Ticket? = self.playerTicket.get(sender());
         
         // Check if the combination entered is valid
+        /* TODO
         if(previousTicket != null) {
             dump(123);
             // TODO: UserCannotPlay
             nativeThrow(123444);
-        }
+        }*/
 
         // Check if the user has empty storage
         if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) {
             dump(234);
             // TODO: InvalidCombination
             nativeThrow(12512512);
+        }
+
+        // When the first ticket is played, start the countdown 
+        if(!self.roundInfo.isStarted) {
+            self.lotteryState = self.LOTTERY_STARTED;
+            self.roundInfo.timeStarted = now();
+            self.roundInfo.isStarted = true;
         }
 
         // TODO: Pay for storage
@@ -205,7 +200,6 @@ contract LuckySix with Deployable {
         }
     }
 
-    // TODO: Can it be private?
     fun checkIfPlayedNumbersAreValid(packedNumbers: Int): Bool {
 
         let combinationLength: Int = 6;

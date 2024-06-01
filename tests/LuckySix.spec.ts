@@ -55,6 +55,12 @@ describe('LuckySix', () => {
             deploy: true,
             success: true,
         });
+
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            'openRound'
+        );
     });
 
     xit('Test PlayTicket function', async () => {
@@ -97,27 +103,40 @@ describe('LuckySix', () => {
         expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
     });
 
-    xit('Should print', async () => {
-        await luckySix.send(
-            deployer.getSender(),
-            { value: toNano('100') },
-            'drawNumbers'
-        );
-        console.log(await luckySix.getTest());
-    })
+    it('Should test if the order logic of lottery states is correct', async () => {
+        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
 
-    it('Asgsg', async () => {
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            { $$type: 'PlayTicket', packedCombination }
+        );
+
         await luckySix.send(
             deployer.getSender(),
             { value: toNano('100') },
             'drawNumbers'
         );
+
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('100') },
+            'openRound'
+        );
+
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            { $$type: 'PlayTicket', packedCombination }
+        );
+
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('100') },
+            'drawNumbers'
+        );
+
         console.log(await luckySix.getDrawnNumbersForRound(0n));
-        await luckySix.send(
-            deployer.getSender(),
-            { value: toNano('100') },
-            'drawNumbers'
-        );
         console.log(await luckySix.getDrawnNumbersForRound(1n));
-    })
+    });
 });
