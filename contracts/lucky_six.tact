@@ -3,7 +3,7 @@ import "@stdlib/deploy";
 // ------------------------------------------------------------------------------------------------------
 // --------------------------------------- TICKET ARRAY STRUCTURE ---------------------------------------
 // ------------------------------------------------------------------------------------------------------
-const _MAX_ARRAY_SIZE: Int = 488;
+const _MAX_ARRAY_SIZE: Int = 48;
 
 struct UnpackedTicketCombinationArray {
     array: map<Int as uint8, Int>;
@@ -62,9 +62,11 @@ message PlayTicket {
     packedCombination:  Int as uint64;
 }
 
+// TODO: Max ticket value is uint128
 struct Ticket {
     roundTickedPlayed:  Int as uint64;
     packedCombination:  Int as uint64;
+    ticketBet:          Int as uint128;
     redeemed:           Bool;
 }
 
@@ -97,7 +99,7 @@ contract LuckySix with Deployable {
 
     // Constructor
     init() {
-        self.owner = sender();
+        self.owner = context().sender;
         self.roundInfo = Round{
             roundNumber: 0,
             timeStarted: 0,
@@ -143,7 +145,7 @@ contract LuckySix with Deployable {
     }
 
     receive("openRound") {
-        if(sender() != self.owner) {
+        if(context().sender != self.owner) {
             // TODO: UnauthorizedAccess
             nativeThrow(1251251251);
         }
@@ -157,7 +159,7 @@ contract LuckySix with Deployable {
 
     // TODO: Check how much this costs
     receive("drawNumbers") {
-        if(sender() != self.owner) {
+        if(context().sender != self.owner) {
             // TODO: UnauthorizedAccess
             nativeThrow(1251251251);
         }
@@ -201,9 +203,9 @@ contract LuckySix with Deployable {
             nativeThrow(12412);
         }
 
-        let previousTicket: Ticket? = self.playerTicket.get(sender());
+        let previousTicket: Ticket? = self.playerTicket.get(context().sender);
         
-        // Check if the combination entered is valid
+        // Check if the user has empty storage
         /* TODO
         if(previousTicket != null) {
             dump(123);
@@ -211,7 +213,7 @@ contract LuckySix with Deployable {
             nativeThrow(123444);
         }*/
 
-        // Check if the user has empty storage
+        // Check if the combination entered is valid        
         if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) {
             dump(234);
             // TODO: InvalidCombination
@@ -227,15 +229,16 @@ contract LuckySix with Deployable {
 
         // TODO: Pay for storage
 
-        self.playerTicket.set(sender(), Ticket{ 
+        self.playerTicket.set(context().sender, Ticket{ 
             roundTickedPlayed: self.roundInfo.roundNumber,
             packedCombination: msg.packedCombination,
+            ticketBet: context().value,
             redeemed: false
         });
     }
 
     receive("getPayoutForTicket") {
-        let playerTicket: Ticket? = self.playerTicket.get(sender());
+        let playerTicket: Ticket? = self.playerTicket.get(context().sender);
 
         if(playerTicket == null) {
             // TODO: TicketDoesNotExists
@@ -244,7 +247,19 @@ contract LuckySix with Deployable {
 
         // TODO: Check if numbers are drawn
 
-        //let multiplier: Int = self.get
+        let multiplier: Int = self.getMultiplier(playerTicket!!);
+
+        if(multiplier == 0) {
+            // TODO: TicketNotWinning
+            nativeThrow(125125125125);
+        }
+
+        let cashEarned: Int = multiplier * playerTicket!!.ticketBet;
+
+        //self.playerTicket.get(context().sender)!!.redeemed = true;
+
+        // TODO: Check platform balance
+
     }
 
     /**
@@ -294,6 +309,7 @@ contract LuckySix with Deployable {
             return Ticket{ 
                 roundTickedPlayed: 0, 
                 packedCombination: 0,
+                ticketBet: 0,
                 redeemed: false
             };
         }
@@ -382,10 +398,5 @@ contract LuckySix with Deployable {
         }
 
         return result;
-    }
-
-    // TODO: Delete
-    get fun ifValid(packedNumbers: Int): Bool {
-        return self.checkIfPlayedNumbersAreValid(packedNumbers);
     }
 }
