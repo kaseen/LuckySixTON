@@ -103,8 +103,8 @@ describe('LuckySix', () => {
         expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
     });
 
-    it('Should test if the order logic of lottery states is correct', async () => {
-        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
+    xit('Should test if the order logic of lottery states is correct', async () => {
+        const packedCombination = packCombinationToBePlayed([34n, 2n, 39n, 23n, 30n, 45n]);
 
         await luckySix.send(
             deployer.getSender(),

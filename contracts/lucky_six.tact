@@ -93,6 +93,7 @@ contract LuckySix with Deployable {
     owner: Address;
     playerTicket: map<Address, Ticket>;
     drawnNumbersPerRound: map<Int as uint128, Int>;     // TODO: Remember number of tickets played, to release storage
+    bonusMultiplier: UnpackedTicketCombinationArray;
 
     // Constructor
     init() {
@@ -102,8 +103,43 @@ contract LuckySix with Deployable {
             timeStarted: 0,
             isStarted: false
         };
-        // TODO: self.lotteryState = self.LOTTERY_CLOSED;
-        self.lotteryState = self.LOTTERY_READY;     // TODO: remove
+        self.lotteryState = self.LOTTERY_CLOSED;
+
+        // TODO: Better
+        self.bonusMultiplier = emptyArray();
+        repeat(5) {
+            self.bonusMultiplier.append(0);
+        }
+        self.bonusMultiplier.append(10000);
+        self.bonusMultiplier.append(7500);
+        self.bonusMultiplier.append(5000);
+        self.bonusMultiplier.append(2500);
+        self.bonusMultiplier.append(1000);
+        self.bonusMultiplier.append(500);
+        self.bonusMultiplier.append(300);
+        self.bonusMultiplier.append(200);
+        self.bonusMultiplier.append(150);
+        self.bonusMultiplier.append(100);
+        self.bonusMultiplier.append(90);
+        self.bonusMultiplier.append(80);
+        self.bonusMultiplier.append(70);
+        self.bonusMultiplier.append(60);
+        self.bonusMultiplier.append(50);
+        self.bonusMultiplier.append(40);
+        self.bonusMultiplier.append(30);
+        self.bonusMultiplier.append(25);
+        self.bonusMultiplier.append(20);
+        self.bonusMultiplier.append(15);
+        self.bonusMultiplier.append(10);
+        self.bonusMultiplier.append(9);
+        self.bonusMultiplier.append(8);
+        self.bonusMultiplier.append(7);
+        self.bonusMultiplier.append(6);
+        self.bonusMultiplier.append(5);
+        self.bonusMultiplier.append(4);
+        self.bonusMultiplier.append(3);
+        self.bonusMultiplier.append(2);
+        self.bonusMultiplier.append(1);
     }
 
     receive("openRound") {
@@ -212,13 +248,41 @@ contract LuckySix with Deployable {
     }
 
     /**
-     *  @dev It is implicitly ensured that the roundNumber is valid, which in turn indicates
-     *       that the numbers have been drawn for that round.
+     *  @dev It is implicitly ensured that the ticket is valid, and that the numbers have been drawn for 
+     *       that round.
      */
     fun getMultiplier(ticket: Ticket): Int {
-        //let drawnNumbers: UnpackedTicketCombinationArray = self.drawnNumbersForRound(ticket.roundTickedPlayed);
+        let drawnNumbers: UnpackedTicketCombinationArray = self.unpackedDrawnNumbersForRound(ticket.roundTickedPlayed);
+        let ticketNumbers: UnpackedTicketCombinationArray = self.unpackTicketNumbers(ticket.packedCombination);
+        
+        let numbersMatchedCounter: Int = 0;
+        let index: Int = -1;
 
-        return 0;
+        let n: Int = ticketNumbers.getLength();
+        let m: Int = drawnNumbers.getLength();
+
+        let i: Int = 0;
+        let j: Int = 0;
+
+        while(i < n) {
+            j = 0;
+            while(j < m) {
+                if(ticketNumbers.getIndex(i) == drawnNumbers.getIndex(j)) {
+                    numbersMatchedCounter = numbersMatchedCounter + 1;
+                    index = j > index ? j : index;
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+
+        if(numbersMatchedCounter == 0) {
+            return 100;
+        } else if(numbersMatchedCounter == 6) {
+            return self.bonusMultiplier.getIndex(index);
+        } else {
+            return 0;
+        }
     }
 
     get fun lastPlayedTicket(address: Address): Ticket? {
