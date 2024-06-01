@@ -3,10 +3,10 @@ import "@stdlib/deploy";
 // ------------------------------------------------------------------------------------------------------
 // --------------------------------------- TICKET ARRAY STRUCTURE ---------------------------------------
 // ------------------------------------------------------------------------------------------------------
-const _MAX_ARRAY_SIZE: Int = 48;
+const _MAX_ARRAY_SIZE: Int = 488;
 
 struct UnpackedTicketCombinationArray {
-    array: map<Int as uint8, Int as uint8>;
+    array: map<Int as uint8, Int>;
     length: Int = 0;
 }
 
@@ -74,7 +74,8 @@ contract LuckySix with Deployable {
         // TODO: self.lotteryState = self.LOTTERY_CLOSED;
         self.lotteryState = self.LOTTERY_READY;
 
-        self.blaa = emptyArray(); // TODO: Remove
+        self.testArray = emptyArray(); // TODO: Remove
+        //self.testArray.append(51);
     }
 
     receive("openRound") {
@@ -90,6 +91,15 @@ contract LuckySix with Deployable {
         self.roundInfo.isStarted = false;
     }
 
+    // TODO REMOVE
+    testArray: UnpackedTicketCombinationArray;
+
+    get fun test(): UnpackedTicketCombinationArray {
+        return self.testArray;
+    }
+
+    // TODO REMOVE
+    // TODO: Check how much this costs
     receive("drawNumbers") {
         if(sender() != self.owner) {
             // TODO: UnauthorizedAccess
@@ -97,8 +107,9 @@ contract LuckySix with Deployable {
         }
 
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
+        let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
 
-        self.lotteryState = self.LOTTERY_CLOSED;
+        // TODO: self.lotteryState = self.LOTTERY_CLOSED;
         // TODO: RoundNumber++
     }
 
@@ -117,12 +128,14 @@ contract LuckySix with Deployable {
         
         // Check if the combination entered is valid
         if(previousTicket != null) {
+            dump(123);
             // TODO: UserCannotPlay
             nativeThrow(123444);
         }
 
         // Check if the user has empty storage
         if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) {
+            dump(234);
             // TODO: InvalidCombination
             nativeThrow(12512512);
         }
@@ -200,23 +213,19 @@ contract LuckySix with Deployable {
         return result;
     }
 
-    receive("generateRandom48Numbers") {
+    fun generateRandom48Numbers(): UnpackedTicketCombinationArray {
         let result: UnpackedTicketCombinationArray = emptyArray();
-        nativePrepareRandom();
-        repeat(48) {    
+
+        nativeRandomizeLt();
+        repeat(48) {
             result.append(randomInt());
         }
-        self.blaa = result;
+
+        return result;
     }
 
     // TODO: Delete
     get fun ifValid(packedNumbers: Int): Bool {
         return self.checkIfPlayedNumbersAreValid(packedNumbers);
-    }
-
-    blaa: UnpackedTicketCombinationArray;
-
-    get fun test(): UnpackedTicketCombinationArray {
-        return self.blaa;
     }
 }
