@@ -63,38 +63,8 @@ describe('LuckySix', () => {
         );
     });
 
-    xit('Test PlayTicket function', async () => {
-        const beforePlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(beforePlayingTicket?.packedCombination).toEqual(0n);
-
-        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
-
-        const firstTx = await luckySix.send(
-            deployer.getSender(),
-            { value: toNano('0.03') },
-            { $$type: 'PlayTicket', packedCombination }
-        );
-
-        const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
-        expect(afterPlayingTicket?.packedCombination).toEqual(packedCombination);
-
-        console.log('==================TODO')
-        const secondTx = await luckySix.send(
-            deployer.getSender(),
-            { value: toNano('0.03') },
-            { $$type: 'PlayTicket', packedCombination }
-        );
-
-        /*
-        TODO
-        expect(secondTx.transactions).toHaveTransaction({
-            exitCode: 1234444
-        })*/
-
-    });
-
     it('Should test if the order logic of lottery states is correct', async () => {
-        const packedCombination = packCombinationToBePlayed([34n, 2n, 39n, 23n, 30n, 45n]);
+        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
 
         await luckySix.send(
             deployer.getSender(),
@@ -128,5 +98,35 @@ describe('LuckySix', () => {
 
         console.log(await luckySix.getUnpackedDrawnNumbersForRound(0n));
         console.log(await luckySix.getUnpackedDrawnNumbersForRound(1n));
+    });
+
+    it('Should correctly play two different tickets in two different rounds', async () => {
+        const beforePlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+        expect(beforePlayingTicket?.packedCombination).toEqual(0n);
+
+        const packedCombination = packCombinationToBePlayed([1n, 2n, 3n, 4n, 5n, 6n]);
+
+        const firstTx = await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            { $$type: 'PlayTicket', packedCombination }
+        );
+
+        const afterPlayingTicket = await luckySix.getLastPlayedTicket(Address.parse('EQBGhqLAZseEqRXz4ByFPTGV7SVMlI4hrbs-Sps_Xzx01x8G'));
+        expect(afterPlayingTicket?.packedCombination).toEqual(packedCombination);
+
+        console.log('==================TODO')
+        const secondTx = await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('0.03') },
+            { $$type: 'PlayTicket', packedCombination }
+        );
+
+        /*
+        TODO
+        expect(secondTx.transactions).toHaveTransaction({
+            exitCode: 1234444
+        })*/
+
     });
 });

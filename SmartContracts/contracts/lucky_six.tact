@@ -78,6 +78,16 @@ struct Round {
 
 /**
  *  @dev The maximum round number is 2^128-1
+ *  @dev Error numbers:
+ *       UnauthorizedAccess:        1
+ *       LotteryNotClosed:          2
+ *       LotteryNotOpen:            3
+ *       LotteryNotStarted:         4
+ *       PreviousTicketUnresolved:  5
+ *       InvalidCombination:        6
+ *       TicketDoesNotExists:       7
+ *       InvalidRoundNumber:        8
+ *       TicketNotWinning:          9
  */
 contract LuckySix with Deployable {
 
@@ -144,27 +154,64 @@ contract LuckySix with Deployable {
         self.bonusMultiplier.append(1);
     }
 
+    // --------------------------------------------------------------------------------------
+    // --------------------------------- RECEIVE FUNCTIONS ----------------------------------
+    // --------------------------------------------------------------------------------------
+
     receive("openRound") {
-        if(context().sender != self.owner) {
-            // TODO: UnauthorizedAccess
-            nativeThrow(1251251251);
-        }
-        if(self.lotteryState != self.LOTTERY_CLOSED) {
-            // TODO: LotteryNotClosed
-            nativeThrow(2141241);
-        }
+        // UnauthorizedAccess
+        if(context().sender != self.owner) { nativeThrow(1); }
+        // LotteryNotClosed
+        if(self.lotteryState != self.LOTTERY_CLOSED) { nativeThrow(2); }
         self.lotteryState = self.LOTTERY_READY;
         self.roundInfo.isStarted = false;
     }
 
-    // TODO: Check how much this costs
-    receive("drawNumbers") {
-        if(context().sender != self.owner) {
-            // TODO: UnauthorizedAccess
-            nativeThrow(1251251251);
+    /**
+     * @dev: A user cannot play a ticket if the status of the last ticket is unresolved, regardless of
+     *       whether the ticket is winning or losing. The map for sender address needs to be empty before
+     *       playing the next ticket.
+     */
+    receive(msg: PlayTicket) {
+        // LotteryNotOpen
+        if(self.lotteryState != self.LOTTERY_READY && self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(3); }
+
+        let previousTicket: Ticket? = self.playerTicket.get(context().sender);
+        
+        // Check if the user has empty storage
+        /* TODO
+        // PreviousTicketUnresolved
+        if(previousTicket != null) { nativeThrow(5); }*/
+
+        // InvalidCombination        
+        if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) { nativeThrow(6); }
+
+        // When the first ticket is played, start the countdown 
+        if(!self.roundInfo.isStarted) {
+            self.lotteryState = self.LOTTERY_STARTED;
+            self.roundInfo.timeStarted = now();
+            self.roundInfo.isStarted = true;
         }
 
-        // TODO: Check timestamp of lottery
+        // TODO: Pay for storage
+
+        self.playerTicket.set(context().sender, Ticket{ 
+            roundTickedPlayed: self.roundInfo.roundNumber,
+            packedCombination: msg.packedCombination,
+            ticketBet: context().value,
+            redeemed: false
+        });
+    }    
+
+    // TODO: Check how much this costs
+    receive("drawNumbers") {
+        // UnauthorizedAccess
+        if(context().sender != self.owner) { nativeThrow(1); }
+
+        // LotteryNotStarted
+        if(self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(124556); }
+
+         // TODO: Check timestamp of lottery
 
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
         let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
@@ -192,67 +239,18 @@ contract LuckySix with Deployable {
         self.lotteryState = self.LOTTERY_CLOSED;
     }
 
-    /**
-     * @dev: A user cannot play a ticket if the status of the last ticket is unresolved, regardless of
-     *       whether the ticket is winning or losing. The map for sender address needs to be empty before
-     *       playing the next ticket.
-     */
-    receive(msg: PlayTicket) {
-        if(self.lotteryState != self.LOTTERY_READY && self.lotteryState != self.LOTTERY_STARTED) {
-            // TODO: LotteryNotOpen
-            nativeThrow(12412);
-        }
-
-        let previousTicket: Ticket? = self.playerTicket.get(context().sender);
-        
-        // Check if the user has empty storage
-        /* TODO
-        if(previousTicket != null) {
-            dump(123);
-            // TODO: UserCannotPlay
-            nativeThrow(123444);
-        }*/
-
-        // Check if the combination entered is valid        
-        if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) {
-            dump(234);
-            // TODO: InvalidCombination
-            nativeThrow(12512512);
-        }
-
-        // When the first ticket is played, start the countdown 
-        if(!self.roundInfo.isStarted) {
-            self.lotteryState = self.LOTTERY_STARTED;
-            self.roundInfo.timeStarted = now();
-            self.roundInfo.isStarted = true;
-        }
-
-        // TODO: Pay for storage
-
-        self.playerTicket.set(context().sender, Ticket{ 
-            roundTickedPlayed: self.roundInfo.roundNumber,
-            packedCombination: msg.packedCombination,
-            ticketBet: context().value,
-            redeemed: false
-        });
-    }
-
     receive("getPayoutForTicket") {
         let playerTicket: Ticket? = self.playerTicket.get(context().sender);
 
-        if(playerTicket == null) {
-            // TODO: TicketDoesNotExists
-            nativeThrow(125125125);
-        }
+        // TicketDoesNotExists
+        if(playerTicket == null) { nativeThrow(7); }
 
         // TODO: Check if numbers are drawn
 
         let multiplier: Int = self.getMultiplier(playerTicket!!);
 
-        if(multiplier == 0) {
-            // TODO: TicketNotWinning
-            nativeThrow(125125125125);
-        }
+        // TicketNotWinning
+        if(multiplier == 0) { nativeThrow(9); }
 
         let cashEarned: Int = multiplier * playerTicket!!.ticketBet;
 
@@ -260,6 +258,37 @@ contract LuckySix with Deployable {
 
         // TODO: Check platform balance
 
+    }
+
+    // --------------------------------------------------------------------------------------
+    // --------------------------------- PRIVATE FUNCTIONS ----------------------------------
+    // --------------------------------------------------------------------------------------
+
+    fun checkIfPlayedNumbersAreValid(packedNumbers: Int): Bool {
+        let combinationLength: Int = 6;
+        let i: Int = 0;
+        let j: Int = 0;
+
+        let combination: UnpackedTicketCombinationArray = self.unpackTicketNumbers(packedNumbers);
+        
+        while(i < combinationLength) {
+            // Check if number is between 1 and `MAXIMUM_NUMBER_DRAWN`
+            if(combination.getIndex(i) < 1 || combination.getIndex(i) > self.MAXIMUM_NUMBER_DRAWN) {
+                return false;
+            }
+
+            // Check if number is unique
+            j = i + 1;
+            while(j < combinationLength) {
+                if(combination.getIndex(i) == combination.getIndex(j)) {
+                    return false;
+                }
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+
+        return true;
     }
 
     /**
@@ -300,49 +329,6 @@ contract LuckySix with Deployable {
         }
     }
 
-    get fun lastPlayedTicket(address: Address): Ticket? {
-        let previousTicket: Ticket? = self.playerTicket.get(address);
-
-        if(previousTicket != null){
-            return previousTicket;
-        } else {
-            return Ticket{ 
-                roundTickedPlayed: 0, 
-                packedCombination: 0,
-                ticketBet: 0,
-                redeemed: false
-            };
-        }
-    }
-
-    fun checkIfPlayedNumbersAreValid(packedNumbers: Int): Bool {
-
-        let combinationLength: Int = 6;
-        let i: Int = 0;
-        let j: Int = 0;
-
-        let combination: UnpackedTicketCombinationArray = self.unpackTicketNumbers(packedNumbers);
-        
-        while(i < combinationLength) {
-            // Check if number is between 1 and `MAXIMUM_NUMBER_DRAWN`
-            if(combination.getIndex(i) < 1 || combination.getIndex(i) > self.MAXIMUM_NUMBER_DRAWN) {
-                return false;
-            }
-
-            // Check if number is unique
-            j = i + 1;
-            while(j < combinationLength) {
-                if(combination.getIndex(i) == combination.getIndex(j)) {
-                    return false;
-                }
-                j = j + 1;
-            }
-            i = i + 1;
-        }
-
-        return true;
-    }
-
     fun unpackTicketNumbers(packedNumbers: Int): UnpackedTicketCombinationArray {
         let result: UnpackedTicketCombinationArray = emptyArray();
 
@@ -352,6 +338,12 @@ contract LuckySix with Deployable {
         }
 
         return result;
+    }
+
+    fun packedDrawnNumbersForRound(n: Int): Int {
+        // InvalidRoundNumber
+        if(n > self.roundInfo.roundNumber) { nativeThrow(8); }
+        return self.drawnNumbersPerRound.get(n)!!;
     }
 
     fun generateNumbers1to48(): UnpackedTicketCombinationArray {
@@ -375,12 +367,16 @@ contract LuckySix with Deployable {
         return result;
     }
 
-     fun packedDrawnNumbersForRound(n: Int): Int {
-        if(n > self.roundInfo.roundNumber) {
-            // TODO: InvalidRoundNumber
-            nativeThrow(134125);
-        }
-        return self.drawnNumbersPerRound.get(n)!!;
+    // --------------------------------------------------------------------------------------
+    // -------------------------------------- GETTERS ---------------------------------------
+    // --------------------------------------------------------------------------------------
+
+    get fun roundInfo(): Round {
+        return self.roundInfo;
+    }
+
+    get fun lotteryState(): Int {
+        return self.lotteryState;
     }
 
     /**
@@ -398,5 +394,20 @@ contract LuckySix with Deployable {
         }
 
         return result;
+    }
+
+    get fun lastPlayedTicket(address: Address): Ticket {
+        let previousTicket: Ticket? = self.playerTicket.get(address);
+
+        if(previousTicket != null){
+            return previousTicket!!;
+        } else {
+            return Ticket{ 
+                roundTickedPlayed: 0, 
+                packedCombination: 0,
+                ticketBet: 0,
+                redeemed: false
+            };
+        }
     }
 }
