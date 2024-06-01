@@ -106,7 +106,18 @@ describe('LuckySix', () => {
         console.log(await luckySix.getTest());
     })
 
-    it('Asgsg', () => {
-        console.log(unpackToCombination(1009575958687090839950251312265224398477446973448828118316714820n));
+    it('Asgsg', async () => {
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('100') },
+            'drawNumbers'
+        );
+        console.log(await luckySix.getDrawnNumbersForRound(0n));
+        await luckySix.send(
+            deployer.getSender(),
+            { value: toNano('100') },
+            'drawNumbers'
+        );
+        console.log(await luckySix.getDrawnNumbersForRound(1n));
     })
 });

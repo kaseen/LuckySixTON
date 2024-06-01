@@ -62,6 +62,9 @@ struct Round {
     isStarted:          Bool;
 }
 
+/**
+ *  @dev The maximum round number is 2^128-1
+ */
 contract LuckySix with Deployable {
 
     const BITMASK_0b111111:     Int = pow(2, 6) - 1;
@@ -78,6 +81,7 @@ contract LuckySix with Deployable {
 
     owner: Address;
     playerTicket: map<Address, Ticket>;
+    drawnNumbersPerRound: map<Int as uint128, Int>;     // TODO: Remember number of tickets played, to release storage
 
     // Constructor
     init() {
@@ -145,10 +149,10 @@ contract LuckySix with Deployable {
         packedResult = packedResult >> 6;
         self.packedResult = packedResult;
 
-        self.testArray = numbers1to48;
+        self.drawnNumbersPerRound.set(self.roundInfo.roundNumber, packedResult);
+        self.roundInfo.roundNumber = self.roundInfo.roundNumber + 1;
 
         // TODO: self.lotteryState = self.LOTTERY_CLOSED;
-        // TODO: RoundNumber++
     }
 
     /**
@@ -260,6 +264,14 @@ contract LuckySix with Deployable {
         }
 
         return result;
+    }
+
+    get fun drawnNumbersForRound(n: Int): Int {
+        if(n > self.roundInfo.roundNumber) {
+            // TODO: InvalidRoundNumber
+            nativeThrow(134125);
+        }
+        return self.drawnNumbersPerRound.get(n)!!;
     }
 
     // TODO: Delete
