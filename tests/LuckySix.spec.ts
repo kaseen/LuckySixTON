@@ -136,7 +136,7 @@ describe('LuckySix', () => {
             'drawNumbers'
         );
 
-        console.log(await luckySix.getDrawnNumbersForRound(0n));
-        console.log(await luckySix.getDrawnNumbersForRound(1n));
+        console.log(await luckySix.getUnpackedDrawnNumbersForRound(0n));
+        console.log(await luckySix.getUnpackedDrawnNumbersForRound(1n));
     });
 });

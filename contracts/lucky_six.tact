@@ -35,12 +35,24 @@ extends fun getIndex(self: UnpackedTicketCombinationArray, index: Int): Int {
     return self.array.get(index)!!;
 }
 
+extends mutates fun setIndex(self: UnpackedTicketCombinationArray, index: Int, value: Int) {
+    require(self.length > 0, "");
+    require(index >= 0, "");
+    require(index < self.length, "");
+
+    self.array.set(index, value);
+}
+
 extends fun getLength(self: UnpackedTicketCombinationArray): Int {
     return self.length;
 }
 
 fun emptyArray(): UnpackedTicketCombinationArray {
-    return UnpackedTicketCombinationArray{ array: emptyMap(), length: 0 };
+    return UnpackedTicketCombinationArray { array: emptyMap(), length: 0 };
+}
+
+fun allocateArray(n: Int): UnpackedTicketCombinationArray {
+    return UnpackedTicketCombinationArray { array: emptyMap(), length: n }; 
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -114,7 +126,7 @@ contract LuckySix with Deployable {
             nativeThrow(1251251251);
         }
 
-        // TODO: Check timestamp
+        // TODO: Check timestamp of lottery
 
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
         let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
@@ -144,8 +156,8 @@ contract LuckySix with Deployable {
 
     /**
      * @dev: A user cannot play a ticket if the status of the last ticket is unresolved, regardless of
-     * whether the ticket is winning or losing. The map for sender address needs to be empty before
-     * playing the next ticket.
+     *       whether the ticket is winning or losing. The map for sender address needs to be empty before
+     *       playing the next ticket.
      */
     receive(msg: PlayTicket) {
         if(self.lotteryState != self.LOTTERY_READY && self.lotteryState != self.LOTTERY_STARTED) {
@@ -184,6 +196,29 @@ contract LuckySix with Deployable {
             packedCombination: msg.packedCombination,
             redeemed: false
         });
+    }
+
+    receive("getPayoutForTicket") {
+        let playerTicket: Ticket? = self.playerTicket.get(sender());
+
+        if(playerTicket == null) {
+            // TODO: TicketDoesNotExists
+            nativeThrow(125125125);
+        }
+
+        // TODO: Check if numbers are drawn
+
+        //let multiplier: Int = self.get
+    }
+
+    /**
+     *  @dev It is implicitly ensured that the roundNumber is valid, which in turn indicates
+     *       that the numbers have been drawn for that round.
+     */
+    fun getMultiplier(ticket: Ticket): Int {
+        //let drawnNumbers: UnpackedTicketCombinationArray = self.drawnNumbersForRound(ticket.roundTickedPlayed);
+
+        return 0;
     }
 
     get fun lastPlayedTicket(address: Address): Ticket? {
@@ -260,12 +295,29 @@ contract LuckySix with Deployable {
         return result;
     }
 
-    get fun drawnNumbersForRound(n: Int): Int {
+     fun packedDrawnNumbersForRound(n: Int): Int {
         if(n > self.roundInfo.roundNumber) {
             // TODO: InvalidRoundNumber
             nativeThrow(134125);
         }
         return self.drawnNumbersPerRound.get(n)!!;
+    }
+
+    /**
+     *  @dev The validity of round number `n` is checked inside the `packedDrawnNumbersForRound` function.
+     */
+    get fun unpackedDrawnNumbersForRound(n: Int): UnpackedTicketCombinationArray {
+        let packedDrawnNumber: Int = self.packedDrawnNumbersForRound(n);
+        let result: UnpackedTicketCombinationArray = allocateArray(self.NUMBER_OF_DRAWS);
+        let tmp: Int = self.NUMBER_OF_DRAWS - 1;
+        let i: Int = 0;
+
+        while(i < self.NUMBER_OF_DRAWS) {
+            result.setIndex(tmp - i, (packedDrawnNumber >> i * 6) & self.BITMASK_0b111111);
+            i = i + 1;
+        }
+
+        return result;
     }
 
     // TODO: Delete
