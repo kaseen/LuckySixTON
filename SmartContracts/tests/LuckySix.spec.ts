@@ -93,16 +93,6 @@ describe('LuckySix', () => {
 
     });
 
-    xit('Should check which combinations are valid', async () => {
-        const validCombination = [1n, 2n, 3n, 4n, 5n, 6n];
-        const invalidCombinationNotUnique = [1n, 2n, 3n, 4n, 5n, 3n];
-        const invalidCombinationOverflow = [1n, 2n, 3n, 4n, 49n, 6n];
-
-        expect(await luckySix.getIfValid(packCombinationToBePlayed(validCombination))).toEqual(true);
-        expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationNotUnique))).toEqual(false);
-        expect(await luckySix.getIfValid(packCombinationToBePlayed(invalidCombinationOverflow))).toEqual(false);
-    });
-
     it('Should test if the order logic of lottery states is correct', async () => {
         const packedCombination = packCombinationToBePlayed([34n, 2n, 39n, 23n, 30n, 45n]);
 
