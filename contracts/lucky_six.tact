@@ -16,12 +16,27 @@ extends mutates fun append(self: UnpackedTicketCombinationArray, item: Int) {
     self.length += 1;
 }
 
+extends mutates fun swapIndexes(self: UnpackedTicketCombinationArray, i: Int, j: Int) {
+    require(i >= 0, "");
+    require(j >= 0, "");
+    require(i < self.length, "");
+    require(j < self.length, "");
+
+    let tmp: Int = self.array.get(i)!!;
+    self.array.set(i, self.array.get(j)!!);
+    self.array.set(j, tmp);
+}
+
 extends fun getIndex(self: UnpackedTicketCombinationArray, index: Int): Int {
     require(self.length > 0, "");
     require(index >= 0, "");
     require(index < self.length, "");
 
     return self.array.get(index)!!;
+}
+
+extends fun getLength(self: UnpackedTicketCombinationArray): Int {
+    return self.length;
 }
 
 fun emptyArray(): UnpackedTicketCombinationArray {
@@ -51,6 +66,7 @@ contract LuckySix with Deployable {
 
     const BITMASK_0b111111:     Int = pow(2, 6) - 1;
     const MAXIMUM_NUMBER_DRAWN: Int = 48;
+    const NUMBER_OF_DRAWS:      Int = 35;
 
     const LOTTERY_READY:        Int = 0;
     const LOTTERY_STARTED:      Int = 1;
@@ -108,6 +124,19 @@ contract LuckySix with Deployable {
 
         let numbers1to48: UnpackedTicketCombinationArray = self.generateNumbers1to48();
         let random48numbers: UnpackedTicketCombinationArray = self.generateRandom48Numbers();
+
+        let j: Int = numbers1to48.getLength() - 1;
+        let i: Int = 0;
+        while(i < self.NUMBER_OF_DRAWS){
+            let indexOfChosenNumber: Int = random48numbers.getIndex(i) % j;
+
+            numbers1to48.swapIndexes(j, indexOfChosenNumber);
+
+            i = i + 1;
+            j = j - 1;
+        }
+
+        self.testArray = numbers1to48;
 
         // TODO: self.lotteryState = self.LOTTERY_CLOSED;
         // TODO: RoundNumber++
