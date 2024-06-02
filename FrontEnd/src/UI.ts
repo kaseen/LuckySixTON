@@ -4,17 +4,32 @@ export const bodyContainerStyle = () => {
     }
 }
 
+export const connectButton = () => {
+    return {
+        paddingTop: '5px',
+        maxWidth: 'fit-content',
+        marginLeft: 'auto',
+        marginRight: 'auto'
+    }
+} 
+
+export const contractAddress = () => {
+    return {
+        display: 'flex',
+        flexDirection: 'column',
+        borderTop: '2px solid black',
+        borderBottom: '2px solid black',
+        padding: '5px',
+        margin: '5px'
+    }
+}
+
 export const roundInfoStyle = () => {
     return {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         alignItems: 'center',
+        borderBottom: '2px solid black',
     }
-}
-
-export const LOTTERY_STATE = {
-    0: 'Ready',
-    1: 'Started',
-    2: 'Closed'
 }

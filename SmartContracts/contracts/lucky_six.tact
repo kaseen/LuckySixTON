@@ -246,6 +246,7 @@ contract LuckySix with Deployable {
      * @dev If the ticket is not winning, remove it from the playerTicket mapping. If it is a winning
      *      one, send the payout to the winner and remove it from the same mapping.
      */
+    // TODO: Reentracy
     receive("resolveTicketStatus") {
         let playerTicket: Ticket? = self.playerTicket.get(context().sender);
 

@@ -1,8 +1,14 @@
 import { TonConnectButton } from '@tonconnect/ui-react';
-import { bodyContainerStyle, roundInfoStyle } from './UI';
 import { useLuckySixContract } from './hooks/useLuckySixContract';
 import { Box } from '@mui/material';
 import './App.css'
+
+import { 
+  bodyContainerStyle, 
+  roundInfoStyle,
+  contractAddress, 
+  connectButton
+} from './UI';
 
 function App() {
   const { roundInfo, lotteryState, address } = useLuckySixContract();
@@ -10,9 +16,11 @@ function App() {
   return (
     <Box>
       <Box sx={bodyContainerStyle}>
-        <TonConnectButton />
-
-        <Box>
+        <Box sx={connectButton}>
+          <TonConnectButton />
+        </Box>
+        
+        <Box sx={contractAddress}>
           <b>Contract address: </b>
           {address?.slice(0, 30) + '...'}
         </Box>
