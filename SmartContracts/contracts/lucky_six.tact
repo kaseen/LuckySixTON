@@ -67,7 +67,6 @@ struct Ticket {
     roundTickedPlayed:  Int as uint64;
     packedCombination:  Int as uint64;
     ticketBet:          Int as uint128;
-    redeemed:           Bool;
 }
 
 struct Round {
@@ -87,8 +86,8 @@ struct Round {
  *       InvalidCombination:        6
  *       TicketDoesNotExists:       7
  *       InvalidRoundNumber:        8
- *       TicketNotWinning:          9
- *       NotEnoughFunds:            10
+ *       NotEnoughFunds:            9
+ *       LotteryNotEnoughFunds:     10
  */
 contract LuckySix with Deployable {
 
@@ -173,13 +172,15 @@ contract LuckySix with Deployable {
      *       whether the ticket is winning or losing. The map for sender address needs to be empty before
      *       playing the next ticket.
      */
-    // TODO: Half a msg.value is played and minimum value that is sent is 1 TON
     receive(msg: PlayTicket) {
         // LotteryNotOpen
         if(self.lotteryState != self.LOTTERY_READY && self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(3); }
 
+        // TODO: Better estimation
+        let estimatedGasOfThisFunction: Int = ton("0.05");
+
         // NotEnoughFunds
-        if(context().value < ton("1")) { nativeThrow(10); }
+        if(context().value < estimatedGasOfThisFunction) { nativeThrow(9); }
 
         let previousTicket: Ticket? = self.playerTicket.get(context().sender);
         
@@ -202,8 +203,7 @@ contract LuckySix with Deployable {
         self.playerTicket.set(context().sender, Ticket{ 
             roundTickedPlayed: self.roundInfo.roundNumber,
             packedCombination: msg.packedCombination,
-            ticketBet: context().value / 2,
-            redeemed: false
+            ticketBet: context().value - estimatedGasOfThisFunction
         });
     }    
 
@@ -243,25 +243,33 @@ contract LuckySix with Deployable {
         self.lotteryState = self.LOTTERY_CLOSED;
     }
 
-    receive("getPayoutForTicket") {
+    /**
+     * @dev If the ticket is not winning, remove it from the playerTicket mapping. If it is a winning
+     *      one, send the payout to the winner and remove it from the same mapping.
+     */
+    receive("resolveTicketStatus") {
         let playerTicket: Ticket? = self.playerTicket.get(context().sender);
 
         // TicketDoesNotExists
         if(playerTicket == null) { nativeThrow(7); }
 
         // TODO: Check if numbers are drawn
-
         let multiplier: Int = self.getMultiplier(playerTicket!!);
 
-        // TicketNotWinning
-        if(multiplier == 0) { nativeThrow(9); }
+        if(multiplier != 0) {
+            let cashEarned: Int = multiplier * playerTicket!!.ticketBet;
 
-        let cashEarned: Int = multiplier * playerTicket!!.ticketBet;
+            // LotteryNotEnoughFunds
+            if(cashEarned > self.lotteryBalance()) { nativeThrow(10); }
 
-        //self.playerTicket.get(context().sender)!!.redeemed = true;
-
-        // TODO: Check platform balance
-
+            send(SendParameters{
+                to: context().sender,
+                value: cashEarned,
+                body: "Congratulations!".asComment()
+            });
+        }
+        // Implicitly deletes entry if multiplier is 0
+        self.playerTicket.del(context().sender);
     }
 
     // --------------------------------------------------------------------------------------
@@ -383,6 +391,10 @@ contract LuckySix with Deployable {
         return self.lotteryState;
     }
 
+    get fun lotteryBalance(): Int {
+        return myBalance();
+    }
+
     /**
      *  @dev The validity of round number `n` is checked inside the `packedDrawnNumbersForRound` function.
      */
@@ -409,8 +421,7 @@ contract LuckySix with Deployable {
             return Ticket{ 
                 roundTickedPlayed: 0, 
                 packedCombination: 0,
-                ticketBet: 0,
-                redeemed: false
+                ticketBet: 0
             };
         }
     }
