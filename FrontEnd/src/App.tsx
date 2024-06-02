@@ -24,8 +24,26 @@ const packCombinationToBePlayed = (arr: Array<bigint>) => {
   return result;
 }
 
+const unpackToCombination = (packedResult: bigint | undefined | null) => {
+  if(packedResult === null || packedResult === undefined) {
+    return [0n, 0n, 0n, 0n, 0n, 0n];
+  } 
+
+  const packed = packedResult!;
+
+  const NUMBER_OF_DRAWS = 6;
+  const BITMASK_0b111111 = 63n;
+  let tmp = NUMBER_OF_DRAWS - 1;
+  let result: Array<bigint> = [];
+  for(let i = 0; i < 6; i++){
+      result[tmp - i] = (packed >> (BigInt(i) * BigInt(6))) & BITMASK_0b111111;
+  }
+
+  return result;
+}
+
 function App() {
-  const { roundInfo, lotteryState, address, sendCombination } = useLuckySixContract();
+  const { roundInfo, lotteryState, address, sendCombination, lastPlayedTicket } = useLuckySixContract();
   const [combination, _setCombination] = useState([0n,0n,0n,0n,0n,0n]);
   const [render, setRender] = useState(0);
   const [amountToPlay, setAmountToPlay] = useState(0n);
@@ -37,6 +55,8 @@ function App() {
 
     render === 0 ? setRender(1) : setRender(0);
   }
+
+  console.log(unpackToCombination(lastPlayedTicket));
 
   const ButtonStyled = styled(Button)({
       backgroundColor: 'rgba(9,9,121,0.4)',
@@ -65,7 +85,10 @@ function App() {
             <b>Lottery State: </b>
             {lotteryState == 0 ? 'Ready' : (lotteryState == 1 ? 'Started' : 'Closed')}
           </Box>
-          <b>Round ends: </b>
+          <Box>
+            <b>Last played ticket: </b>
+            {unpackToCombination(lastPlayedTicket).toString()}
+          </Box>
         </Box>
 
         <Box sx={{ padding: '5px'}}>
@@ -103,7 +126,7 @@ function App() {
                           marginLeft: '5px',
                           marginRight: '5px',
                           border: '2px solid black',
-                          borderRadius: '10px'
+                          borderRadius: '10px',
                       }}
                   />
                   )
@@ -118,7 +141,7 @@ function App() {
               sx={{
                   border: '2px solid black',
                   borderRadius: '10px',
-                  marginBottom: '5px'
+                  marginBottom: '5px',
               }}
           />
         </Box>
@@ -129,7 +152,14 @@ function App() {
             size='large'
             onClick={() => sendCombination(packCombinationToBePlayed(combination), amountToPlay)}
           >
-              PlayLottery
+              Play
+          </ButtonStyled>
+          <ButtonStyled
+            variant='contained'
+            size='large'
+            onClick={() => sendCombination(packCombinationToBePlayed(combination), amountToPlay)}
+          >
+            Resolve Ticket
           </ButtonStyled>
         </Box>
 

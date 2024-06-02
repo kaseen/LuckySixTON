@@ -4,6 +4,7 @@ import { useTonClient } from './useTonClient';
 import { useAsyncInitialize } from './useAsyncInitialize';
 import { Address, OpenedContract, toNano } from '@ton/core';
 import { useTonConnect } from './useTonConnect';
+import { useTonAddress } from '@tonconnect/ui-react';
 
 type RoundInfo = {
     roundNumber: bigint;
@@ -17,8 +18,10 @@ export function useLuckySixContract() {
     const client = useTonClient();
     const [roundInfo, setRoundInfo] = useState<null | RoundInfo>();
     const [lotteryState, setLotteryState] = useState<null | number>();
+    const [lastPlayedTicket, setLastPlayedTicket] = useState<null | bigint>();
 
     const { sender } = useTonConnect();
+    const userFriendlyAddress = useTonAddress();
 
     const sleep = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
   
@@ -29,16 +32,18 @@ export function useLuckySixContract() {
         );
         return client.open(contract) as OpenedContract<LuckySix>;
     }, [client]);
-  
+
     useEffect(() => {
         async function getRoundInfo() {
             if (!luckySixContract) return;
             setRoundInfo(null);
             setLotteryState(null);
+            //setLastPlayedTicket(null);
             const roundInfo = await luckySixContract.getRoundInfo();
             const lotteryState = await luckySixContract.getLotteryState();
             setRoundInfo(roundInfo);
             setLotteryState(Number(lotteryState));
+            setLastPlayedTicket((await luckySixContract.getLastPlayedTicket(Address.parse(userFriendlyAddress))).packedCombination);
 
             await sleep(10000);
             getRoundInfo();
@@ -57,8 +62,6 @@ export function useLuckySixContract() {
                 { $$type: 'PlayTicket', packedCombination }
             )
         },
-        getLastPlayedTicket: () => {
-            return luckySixContract?.getLastPlayedTicket(sender.address!);
-        }
+        lastPlayedTicket: lastPlayedTicket
     };
   }
