@@ -62,6 +62,13 @@ export function useLuckySixContract() {
                 { $$type: 'PlayTicket', packedCombination }
             )
         },
-        lastPlayedTicket: lastPlayedTicket
+        lastPlayedTicket: lastPlayedTicket,
+        resolve: () => {
+            return luckySixContract?.send(
+                sender,
+                { value: toNano('0.1')},
+                'resolveTicketStatus'
+            )
+        },
     };
   }
