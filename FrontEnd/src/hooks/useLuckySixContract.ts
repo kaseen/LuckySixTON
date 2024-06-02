@@ -56,6 +56,9 @@ export function useLuckySixContract() {
                 { value },
                 { $$type: 'PlayTicket', packedCombination }
             )
+        },
+        getLastPlayedTicket: () => {
+            return luckySixContract?.getLastPlayedTicket(sender.address!);
         }
     };
   }

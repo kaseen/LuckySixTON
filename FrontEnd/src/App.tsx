@@ -1,4 +1,5 @@
 import { TonConnectButton } from '@tonconnect/ui-react';
+import { toNano } from '@ton/core';
 import { useLuckySixContract } from './hooks/useLuckySixContract';
 import { Box, TextField, Button } from '@mui/material';
 import { styled } from '@mui/system';
@@ -113,7 +114,7 @@ function App() {
         <Box>
           <TextField
               inputProps={{ min: 0, style: { textAlign: 'center' }}}
-              onChange={(v) => setAmountToPlay(BigInt(v.target.value))}
+              onChange={(v) => setAmountToPlay(toNano(v.target.value))}
               sx={{
                   border: '2px solid black',
                   borderRadius: '10px',
@@ -126,7 +127,7 @@ function App() {
           <ButtonStyled
             variant='contained'
             size='large'
-            onClick={() => console.log(packCombinationToBePlayed(combination), amountToPlay)}
+            onClick={() => sendCombination(packCombinationToBePlayed(combination), amountToPlay)}
           >
               PlayLottery
           </ButtonStyled>
