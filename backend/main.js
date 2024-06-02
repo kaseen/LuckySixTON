@@ -23,6 +23,8 @@ const CONTRACT_ADDRESS = 'EQCv9oMOPknyWSbUeqpNMFZdYxmrl871kKroUJzmuGW0GXPN';
 
     const walletContract = client.open(wallet);
     const seqno = await walletContract.getSeqno();
+    
+    let messageBody = beginCell().storeUint(0, 32).storeStringTail('openRound').endCell();
     // TODO:
     /*await walletContract.sendTransfer({
         secretKey: key.secretKey,

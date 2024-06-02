@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { LuckySix } from '../../../SmartContracts/wrappers/LuckySix';
 import { useTonClient } from './useTonClient';
 import { useAsyncInitialize } from './useAsyncInitialize';
-import { Address, OpenedContract } from '@ton/core';
+import { Address, OpenedContract, toNano } from '@ton/core';
+import { useTonConnect } from './useTonConnect';
 
 type RoundInfo = {
     roundNumber: bigint;
@@ -10,15 +11,21 @@ type RoundInfo = {
     isStarted: boolean;
 }
 
+const CONTRACT_ADDRESS = 'EQCv9oMOPknyWSbUeqpNMFZdYxmrl871kKroUJzmuGW0GXPN';
+
 export function useLuckySixContract() {
     const client = useTonClient();
     const [roundInfo, setRoundInfo] = useState<null | RoundInfo>();
     const [lotteryState, setLotteryState] = useState<null | number>();
+
+    const { sender } = useTonConnect();
+
+    const sleep = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
   
     const luckySixContract = useAsyncInitialize(async () => {
         if (!client) return;
         const contract = new LuckySix(
-            Address.parse('EQCv9oMOPknyWSbUeqpNMFZdYxmrl871kKroUJzmuGW0GXPN') // replace with your address from tutorial 2 step 8
+            Address.parse(CONTRACT_ADDRESS)
         );
         return client.open(contract) as OpenedContract<LuckySix>;
     }, [client]);
@@ -32,6 +39,9 @@ export function useLuckySixContract() {
             const lotteryState = await luckySixContract.getLotteryState();
             setRoundInfo(roundInfo);
             setLotteryState(Number(lotteryState));
+
+            await sleep(10000);
+            getRoundInfo();
         }
         getRoundInfo();
     }, [luckySixContract]);
@@ -40,5 +50,12 @@ export function useLuckySixContract() {
         roundInfo: roundInfo,
         lotteryState: lotteryState,
         address: luckySixContract?.address.toString(),
+        sendCombination: (packedCombination: bigint, value: bigint) => {
+            return luckySixContract?.send(
+                sender,
+                { value },
+                { $$type: 'PlayTicket', packedCombination }
+            )
+        }
     };
   }
