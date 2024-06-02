@@ -185,9 +185,8 @@ contract LuckySix with Deployable {
         let previousTicket: Ticket? = self.playerTicket.get(context().sender);
         
         // Check if the user has empty storage
-        /* TODO
         // PreviousTicketUnresolved
-        if(previousTicket != null) { nativeThrow(5); }*/
+        if(previousTicket != null) { nativeThrow(5); }
 
         // InvalidCombination        
         if(self.checkIfPlayedNumbersAreValid(msg.packedCombination) == false) { nativeThrow(6); }
@@ -213,7 +212,7 @@ contract LuckySix with Deployable {
         if(context().sender != self.owner) { nativeThrow(1); }
 
         // LotteryNotStarted
-        if(self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(124556); }
+        if(self.lotteryState != self.LOTTERY_STARTED) { nativeThrow(4); }
 
          // TODO: Check timestamp of lottery
 

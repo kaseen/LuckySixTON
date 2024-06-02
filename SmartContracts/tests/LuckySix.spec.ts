@@ -129,7 +129,7 @@ describe('LuckySix', () => {
         const beforePlayingTicket = await luckySix.getLastPlayedTicket(userAddress);
         expect(beforePlayingTicket?.packedCombination).toEqual(0n);
 
-        const packedCombination = packCombinationToBePlayed([45n, 23n, 12n, 11n, 37n, 1n]);
+        const packedCombination = packCombinationToBePlayed([33n, 16n, 40n, 7n, 3n, 20n]);
 
         console.log(fromNano(await luckySix.getLotteryBalance()));
 
